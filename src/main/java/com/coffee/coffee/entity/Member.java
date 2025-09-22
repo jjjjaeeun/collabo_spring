@@ -29,7 +29,7 @@ public class Member {
 
     // 필수 사항이고, 절대로 동일한 값이 들어오면 안된다는 뜻
     @Column(unique = true, nullable = false)
-    // @NotBlank(message = "이메일은 필수 입력 사항입니다.")
+    @NotBlank(message = "이메일은 필수 입력 사항입니다.")
     @Email(message = "올바른 이메일 형식으로 입력해 주세요.")
     private String email;
 
