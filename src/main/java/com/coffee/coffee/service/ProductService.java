@@ -46,7 +46,10 @@ public class ProductService {
     }
 
     public Optional<Product> findById(Long id) {
-
         return productRepository.findById(id);
+    }
+
+    public Optional<Product> fineProductById(Long productId) {
+        return productRepository.findById(productId);
     }
 }
