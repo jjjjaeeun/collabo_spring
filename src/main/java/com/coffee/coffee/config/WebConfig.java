@@ -11,6 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
     //자바에서 ...은 가변 매개변수
     @Override // allowCredentials(true) : 브라우저가 서버와 통신할 때 쿠키/ 세션 등의 인증 정보를 주고 받는 것에 대해 허락함
     public void addCorsMappings(CorsRegistry registry) {
+        // 3000번 포트에서 GET부터 PATCH까지의 열거한 요청 모두를 수락
         registry.addMapping("/**") /* 모든 경로 허용*/
                 .allowedOrigins("http://localhost:3000") /* react 포트 */
                 .allowedMethods("GET","POST","PUT","DELETE","OPTIONS","PATCH") /* 허용할 메소드 */
