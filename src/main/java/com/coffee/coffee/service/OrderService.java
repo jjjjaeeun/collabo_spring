@@ -1,11 +1,13 @@
 package com.coffee.coffee.service;
 
+import com.coffee.coffee.constant.OrderStatus;
 import com.coffee.coffee.entity.Order;
 import com.coffee.coffee.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,13 +18,28 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public List<Order> findByMemberId(Long memberId) {
-        // 쿼리 메소드를 사용하여 특정 회원의 주문 날짜가 최신인 것부터 조회합니다.
-        // cf. 좀 더 복잡한 쿼리를 사용하시려면 @Query 또는 Querydsl을 사용
-        return orderRepository.findByMemberIdOrderByIdDesc(memberId);
+    public List<Order> findByMemberId(Long memberId, OrderStatus status) {
+        return orderRepository.findByMemberIdAndStatusOrderByIdDesc(memberId, status);
     }
 
-    public List<Order> findAllOrders() {
-        return orderRepository.findAllByOrderByIdDesc();
+    public List<Order> findAllOrders(OrderStatus status) {
+        return orderRepository.findByStatusOrderByIdDesc(status);
+    }
+
+    public int updateOrderStatus(Long orderId, OrderStatus status) {
+        return orderRepository.updateOrderStatus(orderId,status);
+    }
+
+    public boolean existsById(Long orderId) {
+        return orderRepository.existsById(orderId);
+    }
+
+    public void deleteById(Long orderId) {
+        orderRepository.deleteById(orderId);
+    }
+
+    public Optional<Order> findOrderById(Long orderId) {
+        return orderRepository.findById(orderId);
     }
 }
+

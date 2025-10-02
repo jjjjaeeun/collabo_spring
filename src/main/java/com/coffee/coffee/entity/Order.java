@@ -4,10 +4,12 @@ import com.coffee.coffee.constant.OrderStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@ToString
 @Getter
 @Setter
 @Entity
@@ -31,6 +33,7 @@ public class Order { // 주문과 관련된 Entity
 
     private LocalDate orderdate; // 주문 날짜
 
+    @Enumerated(EnumType.STRING)
     private OrderStatus status; // 주문 상태
 
 
