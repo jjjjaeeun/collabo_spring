@@ -1,9 +1,12 @@
 package com.coffee.coffee.controller;
 
+import com.coffee.coffee.constant.Category;
 import com.coffee.coffee.entity.Product;
 import com.coffee.coffee.service.ProductService;
+import dto.SearchDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,11 +28,51 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
-    @GetMapping("/list") // 상품 목록을 List 컬렉션으로 반환해 줍니다.
-    public List<Product> list() {
-        List<Product> products = this.productService.getProductList();
+//    @GetMapping("/list") // 상품 목록을 List 컬렉션으로 반환해 줍니다.
+//    public List<Product> list() {
+//        List<Product> products = this.productService.getProductList();
+//
+//        return products;
+//    }
 
-        return products;
+//    @GetMapping("/list") // 페이징 관련 파라미터를 사용하여 상품 목록을 조회합니다.
+//    public ResponseEntity<Page<Product>> listProducts(
+//            @RequestParam(defaultValue = "0") int pageNumber,
+//            @RequestParam(defaultValue = "6") int pageSize
+//    ){
+//        System.out.println("pageNumber: " + pageNumber + ", pageSize: " + pageSize);
+//
+//        // 현재 페이지는 pageNumber, 페이지당 보여줄 개수 pageSize를 사용하여 Pageable 페이지를 구함
+//        // 상품 번호가 큰 것부터 정렬 Sort.by(Sort.Direction.DESC,"id")
+//        Pageable pageable = PageRequest.of(pageNumber,pageSize, Sort.by(Sort.Direction.DESC,"id"));
+//        Page<Product> productPage = productService.listProducts(pageable) ;
+//
+//        return ResponseEntity.ok(productPage);
+//    }
+
+
+    @GetMapping("/list") // 필드 검색 조건과 페이징 관련 파라미터를 사용하여 상품 목록을 조회
+    public ResponseEntity<Page<Product>> listProducts(
+            @RequestParam(defaultValue = "0") int pageNumber,
+            @RequestParam(defaultValue = "6") int pageSize,
+            @RequestParam(defaultValue = "all") String searchDateType,
+            @RequestParam(defaultValue = "") Category category,
+            @RequestParam(defaultValue = "") String searchMode,
+            @RequestParam(defaultValue = "") String searchKeyword
+    ) {
+        System.out.println("pageNumber: " + pageNumber + ", pageSize: " + pageSize);
+
+        SearchDto searchDto = new SearchDto(searchDateType, category, searchMode, searchKeyword);
+
+        Page<Product> products = productService.listProducts(searchDto,pageNumber,pageSize);
+
+        System.out.println("검색 조건: " + searchDto);
+        System.out.println("총 상품 갯수: " + products.getTotalElements());
+        System.out.println("총 페이지 번호: " + products.getTotalPages());
+        System.out.println("현재 페이지 번호: " + products.getNumber());
+
+        // Http 응답 코드 200과 함께 상품 정보를 json 형태로 반환해 줌
+        return ResponseEntity.ok(products);
     }
 
     // 클라이언트가 특정 상품 id에 대하여 삭제요청을 함
@@ -83,29 +126,30 @@ public class ProductController {
 
             this.productService.save(product);
 
-            return ResponseEntity.ok(Map.of("message","Product insert successfully","image",imageFileName));
+            return ResponseEntity.ok(Map.of("message", "Product insert successfully", "image", imageFileName));
 
-        }catch (Exception err){
-            return ResponseEntity.status(500).body(Map.of("message",err.getMessage(),"error","Error file uploading"));
+        } catch (Exception err) {
+            return ResponseEntity.status(500).body(Map.of("message", err.getMessage(), "error", "Error file uploading"));
         }
     }
+
     // 프론트 앤드의 상품 수정 페이지에서 요청이 들어옴
     @GetMapping("/update/{id}") // 상품의 id 정보를 이용하여 해당 상품 Bean 객체를 반환해줌
-    public ResponseEntity<Product> getUpdate(@PathVariable Long id){
+    public ResponseEntity<Product> getUpdate(@PathVariable Long id) {
         System.out.println("수정할 상품 번호: " + id);
         Product product = this.productService.getProductById(id);
 
-        if(product == null){ // 상품이 없으면 404 응답과 함께 null을 반환
+        if (product == null) { // 상품이 없으면 404 응답과 함께 null을 반환
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 
-        }else { // 해당 상품의 정보와 함께, 성공(200) 메시지를 바환함
+        } else { // 해당 상품의 정보와 함께, 성공(200) 메시지를 바환함
             return ResponseEntity.ok(product);
 
         }
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> putUpdate(@PathVariable Long id, @RequestBody Product updatedProduct){
+    public ResponseEntity<?> putUpdate(@PathVariable Long id, @RequestBody Product updatedProduct) {
 //        System.out.println("수정할 상품 id:" + id);
 //
 //        System.out.println("관리자가 수정한 상품의 정보");
@@ -113,13 +157,13 @@ public class ProductController {
 
         Optional<Product> findProduct = productService.findById(id);
 
-        if (findProduct.isEmpty()){ // 상품이 존재하지 않으면 404 응답 반환
+        if (findProduct.isEmpty()) { // 상품이 존재하지 않으면 404 응답 반환
             return ResponseEntity.notFound().build();
         } else { // 상품이 있습니다.
             // Optional에서 실제 상품 정보를 끄집어 내기
             Product savedProduct = findProduct.get();
 
-            try{
+            try {
                 // 이전 이미지 객체에 새로운 이미지 객체 정보를 업데이트함
                 savedProduct.setName(updatedProduct.getName());
                 savedProduct.setPrice(updatedProduct.getPrice());
@@ -128,7 +172,7 @@ public class ProductController {
                 savedProduct.setDescription(updatedProduct.getDescription());
 
                 // 이미지가 의미 있는 문자열로 되어있고, Base64 인코딩 형식이면 이미지 이름을 변경함
-                if (updatedProduct.getImage() != null && updatedProduct.getImage().startsWith("data:image")){
+                if (updatedProduct.getImage() != null && updatedProduct.getImage().startsWith("data:image")) {
                     String imageFileName = savedProductImage(updatedProduct.getImage());
                     savedProduct.setImage(imageFileName);
                 }
@@ -136,19 +180,20 @@ public class ProductController {
                 // 서비스를 통하여 데이터 베이스에 저장함
                 this.productService.save(savedProduct);
 
-                return ResponseEntity.ok(Map.of("message","상품 수정 성공"));
+                return ResponseEntity.ok(Map.of("message", "상품 수정 성공"));
 
-            }catch (Exception err){ // 오류 발생시 500 응답 코드 반환
+            } catch (Exception err) { // 오류 발생시 500 응답 코드 반환
                 return ResponseEntity
                         .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("message",err.getMessage(),"error","Error product update failed"));
+                        .body(Map.of("message", err.getMessage(), "error", "Error product update failed"));
             }
         }
 
     }
+
     // Base64 인코딩 문자열을 변환하여 이미지로 만들고 저장해주는 메소드
     private String savedProductImage(String base64Image) {
-        String imageFileName = "product_" + System.currentTimeMillis() +".jpg";
+        String imageFileName = "product_" + System.currentTimeMillis() + ".jpg";
 
         //폴더 구분자가 제대로 설정 되어있으면 그대로 사용
         //그렇지 않으면 폴더 구분자를 붙여줘야함
@@ -167,26 +212,26 @@ public class ProductController {
             fos.write(decodedImage);
             return imageFileName;
 
-        }catch (Exception err){
+        } catch (Exception err) {
             err.printStackTrace();
             return base64Image;
         }
     }
 
     @GetMapping("/detail/{id}") // 프론트 엔드가 상품에 대한 상세 정보를 요청함
-    public ResponseEntity<Product> detail(@PathVariable Long id){
+    public ResponseEntity<Product> detail(@PathVariable Long id) {
         Product product = this.productService.getProductById(id);
 
-        if (product == null){ // 404 응답
+        if (product == null) { // 404 응답
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
-        }else { // 200 ok 응답
+        } else { // 200 ok 응답
             return ResponseEntity.ok(product);
         }
     }
 
     @GetMapping("") // 홈페이지에 보여줄 큰 이미지들에 대한 정보를 읽어옴
-    public List<Product> getBigsizeProducts(@RequestParam(required = false) String filter){
+    public List<Product> getBigsizeProducts(@RequestParam(required = false) String filter) {
         return productService.getProductsByFilter(filter);
     }
 
