@@ -23,10 +23,10 @@ public class SecurityConfig {
     // 로그인,로그아웃,cors 활성화,csrf 설정 등등
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // 명시된 항목들은 로그인이 필요없이 무조건 접속 허용
-        String[] permitAllowed = {"/", "/member/signup", "/member/login", "/product", "/product/list", "/cart/**", "/order/**", "/fruit/**", "/element/**", "/images"};
+        String[] permitAllowed = {"/", "/member/signup", "/member/login", "/product", "/product/list", "/cart/**", "/order/**", "/fruit/**", "/element/**", "/images/**"};
 
         // 반드시 로그인이 필요한 목록들
-        String[] neededAuthenticated = {"/product/detail"};
+        String[] neededAuthenticated = {"/product/detail/**"};
 
         // HttpSecurity: 개발자가 코드를 직접 작성하여 보안 정책을 설정할 수 있도록 도와주는 객체
         http
@@ -35,6 +35,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(permitAllowed).permitAll()
                         .requestMatchers(neededAuthenticated).authenticated()// 그 외 경로는 인증(로그인)이 필요
+                        .anyRequest().authenticated()
 
 
                 ); // 이 경로는 무조건 접속 허용
@@ -66,6 +67,13 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")); // 허용할 메소드 목록
         // 클라이언트가 서버에 요청시 모든 요청 정보를 허용하겠습니다.
         configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        /*
+            백엔드: 리액트에서 쿠키, 세션 정보를 넘기면 허용하기 위한 옵션
+            프론트: axios를 사용할 때 반드시 'withCredentials: true' 옵션을 명시하도록 할 것
+
+            인증 성공시 백엔드가 프론트에 JSESSIONID라는 이름으로 데이터를 넘겨주고 쿠키형태로 저장
+        */
         configuration.setAllowCredentials(true); // 쿠키, 세션 인증 정보 허용
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

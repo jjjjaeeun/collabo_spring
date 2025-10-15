@@ -6,6 +6,7 @@ import com.coffee.coffee.service.ProductService;
 import dto.SearchDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -88,7 +89,11 @@ public class ProductController {
                 return ResponseEntity.badRequest().body(id + "번 상품이 존재하지 않습니다.");
             }
 
-        } catch (Exception err) {
+        } catch (DataIntegrityViolationException err) {
+            String message = "해당 상품은 장바구니에 포함되어 있거나, 매출이 발생한 상품입니다.\n확인해 주세요";
+            return ResponseEntity.badRequest().body(message);
+
+        }catch (Exception err) {
             return ResponseEntity.internalServerError().body("오류 발생:" + err.getMessage());
         }
     }
